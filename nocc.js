@@ -1,16 +1,21 @@
+// HTMLCollection doesn't implement iterator in Edge by default.
+HTMLCollection.prototype[Symbol.iterator] = Array.prototype[Symbol.iterator];
+
 function attachSubObserver(targetNode) {
 	// Options for the observer (which mutations to observe)
 	let config = { attributes: true };
 
 	// Callback function to execute when mutations are observed
 	let callback = function(mutationsList) {
-		if (!targetNode.hasChildNodes())
+		if (!targetNode.hasChildNodes()) {
 			return;
+		}
 
 		let container = targetNode.children[0];
 
-		if (!container.hasChildNodes())
+		if (!container.hasChildNodes()) {
 			return;		
+		}
 
 		for (child of container.children) {
 			child.innerHTML = child.innerHTML.replace(/\[.*\]/g, '') 
@@ -33,12 +38,14 @@ let docObserverConfig = {
 
 // Create observer 
 new MutationObserver(function (mutations, me) {
-	let subsContainer = document.getElementsByClassName("player-timedtext")[0];
+	let subsDivs = document.getElementsByClassName("player-timedtext");
 
-	if (subsContainer) {
+	console.log("Found all these subs divs:", subsDivs);
+
+	if (subsDivs[0]) {
 		console.log("Found subs container!");
 
-		attachSubObserver(subsContainer);
+		attachSubObserver(subsDivs[0]);
 
 		// No longer to need to observe the document.
 		me.disconnect();
