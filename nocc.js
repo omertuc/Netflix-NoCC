@@ -1,54 +1,82 @@
 // HTMLCollection doesn't implement iterator in Edge by default.
 HTMLCollection.prototype[Symbol.iterator] = Array.prototype[Symbol.iterator];
 
+function noccLog(...args) {
+	console.log("[Netflix NoCC Extension Debug Log] -", ...args);
+}
+
 function attachSubObserver(targetNode) {
 	// Options for the observer (which mutations to observe)
-	let config = { attributes: true };
+	let config = { attributes: true, subtree: true };
 
 	// Callback function to execute when mutations are observed
-	let callback = function(mutationsList) {
+	let callback = function(mutationsList, me) {
+		for (mutation of mutationsList) {
+			if (targetNode in mutation.removedNodes) {
+
+				noccLog("Detected subtitles div deletion")
+
+				me.disconnect();
+				waitForSubContainerCreation();
+			}
+		}
+
 		if (!targetNode.hasChildNodes()) {
 			return;
 		}
 
-		let container = targetNode.children[0];
+		for (container of targetNode.children)
+		{
+			if (!container.hasChildNodes()) {
+				return;		
+			}
 
-		if (!container.hasChildNodes()) {
-			return;		
+			for (child of container.children) {
+				child.innerHTML = child.innerHTML.replace(/\[.*\]/g, '') 
+
+				// Attempt to remove non-alphanumeric characters
+				let textOnly = child.innerHTML.replace(/[^A-Za-z0-9]/g, '');
+
+				// If it's empty after removing all text, leave it like that since it's just leftover symbols
+				if (textOnly == '')
+					child.innerHTML = textOnly;
+			}    
 		}
-
-		for (child of container.children) {
-			child.innerHTML = child.innerHTML.replace(/\[.*\]/g, '') 
-		}    
 	};
-
+ 	
 	// Create an observer instance linked to the callback function
 	let observer = new MutationObserver(callback);
 
 	// Start observing the target node for configured mutations
 	observer.observe(targetNode, config);
 
-	console.log("Netflix CC destroyer is waiting on", targetNode, " for closed captions to destroy");
+	noccLog("Waiting on", targetNode, " for closed captions to destroy");
 }
 
-let docObserverConfig = {
-	childList: true,
-	subtree: true
-};
+function waitForSubContainerCreation() {
+	let docObserverConfig = {
+		childList: true,
+		subtree: true
+	};
 
-// Create observer 
-new MutationObserver(function (mutations, me) {
-	let subsDivs = document.getElementsByClassName("player-timedtext");
+	noccLog("Waiting for subtitles div");
 
-	console.log("Found all these subs divs:", subsDivs);
+	// Create observer 
+	new MutationObserver(function (mutations, me) {
+		let subsDivs = document.getElementsByClassName("player-timedtext");
 
-	if (subsDivs[0]) {
-		console.log("Found subs container!");
+		noccLog("Found all these subs divs:", subsDivs);
 
-		attachSubObserver(subsDivs[0]);
+		if (subsDivs[0]) {
+			noccLog("Found subs container!");
 
-		// No longer to need to observe the document.
-		me.disconnect();
-		return;
-	}
-}).observe(document, docObserverConfig);
+			attachSubObserver(subsDivs[0]);
+
+			// No longer to need to observe the document.
+			me.disconnect();
+			return;
+		}
+	}).observe(document, docObserverConfig);
+}
+
+waitForSubContainerCreation();
