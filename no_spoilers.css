@@ -1,4 +1,60 @@
-/* Removes the episode preview image while loading */
-.player-loading-background-image {
+.player-loading-background-image, .evidence-overlay, .synopsis {
 	display: none !important; 
-};
+}
+
+.thumbnail-image {
+	background-image: none !important;
+	background-color: #262626 !important;
+}
+
+div.thumbnail > div > div.gradient {
+	display: none !important;
+}
+
+.SeamlessControls--background-artwork-visible {
+	background-image: none !important;
+}
+
+div.image-rotator.bob-background > span > div {
+	background-image: none !important;
+}
+
+div.episodeSynopsis { 
+	display: none !important;
+}
+
+div.ptrack-content > div.episodeArt {
+	background-image: none !important;
+}
+
+div.episodeTitle > p {
+	display: none !important;
+}
+
+div.image-rotator.jawBoneBackground > span > div.image-rotator-image {
+	background-image: none !important;
+}
+
+#tab-Trailers {
+	display: none !important;
+}
+
+div.player-title-evidence > h4.playable-title {
+	display: none !important;
+}
+
+div.watched > div.episodeTitle {
+	color: black;
+}
+
+div.PlayerControls--button-control-row > div > div.ellipsize-text > span:nth-child(3) {
+	display: none;
+}
+
+div.title-and-synopsis > h3 {
+	display: none;
+}
+
+div.tp-image > img {
+	filter: blur(15px);
+}
