@@ -1,82 +1,52 @@
 // HTMLCollection doesn't implement iterator in Edge by default.
 HTMLCollection.prototype[Symbol.iterator] = Array.prototype[Symbol.iterator];
 
-function noccLog(...args) {
+noccLog = (...args) => {
 	console.log("[Netflix NoCC Extension Debug Log] -", ...args);
 }
 
-function attachSubObserver(targetNode) {
-	// Options for the observer (which mutations to observe)
-	let config = { attributes: true, subtree: true };
+fixSubs = (tt) => {
+	let subs = tt;
 
-	// Callback function to execute when mutations are observed
-	let callback = function(mutationsList, me) {
-		for (mutation of mutationsList) {
-			if (targetNode in mutation.removedNodes) {
+	if (!subs.hasChildNodes()) {
+		return;
+	}
 
-				noccLog("Detected subtitles div deletion")
-
-				me.disconnect();
-				waitForSubContainerCreation();
-			}
+	for (container of subs.children)
+	{
+		if (!container.hasChildNodes()) {
+			return;		
 		}
 
-		if (!targetNode.hasChildNodes()) {
-			return;
-		}
+		for (child of container.children) {
+			child.innerHTML = child.innerHTML.replace(/\[.*\]/g, '') 
 
-		for (container of targetNode.children)
-		{
-			if (!container.hasChildNodes()) {
-				return;		
-			}
+			// Attempt to remove non-alphanumeric characters
+			let textOnly = child.innerHTML.replace(/[^A-Za-z0-9]/g, '');
 
-			for (child of container.children) {
-				child.innerHTML = child.innerHTML.replace(/\[.*\]/g, '') 
-
-				// Attempt to remove non-alphanumeric characters
-				let textOnly = child.innerHTML.replace(/[^A-Za-z0-9]/g, '');
-
-				// If it's empty after removing all text, leave it like that since it's just leftover symbols
-				if (textOnly == '')
-					child.innerHTML = textOnly;
-			}    
-		}
-	};
- 	
-	// Create an observer instance linked to the callback function
-	let observer = new MutationObserver(callback);
-
-	// Start observing the target node for configured mutations
-	observer.observe(targetNode, config);
-
-	noccLog("Waiting on", targetNode, " for closed captions to destroy");
+			// If it's empty after removing all text, leave it like that since it's just leftover symbols
+			if (textOnly == '')
+				child.innerHTML = textOnly;
+		}    
+	}
 }
 
-function waitForSubContainerCreation() {
-	let docObserverConfig = {
-		childList: true,
-		subtree: true
-	};
+// Options for the observer (which mutations to observe)
+let config = { attributes: true, childList: true, subtree: true};
 
-	noccLog("Waiting for subtitles div");
-
-	// Create observer 
-	new MutationObserver(function (mutations, me) {
-		let subsDivs = document.getElementsByClassName("player-timedtext");
-
-		noccLog("Found all these subs divs:", subsDivs);
-
-		if (subsDivs[0]) {
-			noccLog("Found subs container!");
-
-			attachSubObserver(subsDivs[0]);
-
-			// No longer to need to observe the document.
-			me.disconnect();
-			return;
+// Callback function to execute when mutations are observed
+let callback = (mutationsList, me) => {
+	for (mut of mutationsList) {
+		if (mut.target.className == "player-timedtext") {
+			fixSubs(mut.target);
 		}
-	}).observe(document, docObserverConfig);
-}
+	}
+};
+	
+// Create an observer instance linked to the callback function
+let observer = new MutationObserver(callback);
 
-waitForSubContainerCreation();
+// Start observing the target node for configured mutations
+observer.observe(document, config);
+
+noccLog("Waiting on", document, " for closed captions to destroy");

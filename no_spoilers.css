@@ -1,0 +1,4 @@
+/* Removes the episode preview image while loading */
+.player-loading-background-image {
+	display: none !important; 
+};
